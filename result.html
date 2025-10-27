@@ -1,1 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>麻雀点数計算機 (JavaScript)</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h1 { color: #333; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input[type="number"], select { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; font-size: 16px; width: 100%; }
+        button:hover { background-color: #45a049; }
+        #result { margin-top: 20px; padding: 15px; border: 2px solid #007bff; background-color: #e9f5ff; border-radius: 4px; }
+        .score-detail { margin-top: 10px; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h1>麻雀点数計算機</h1>
+
+    <div>
+        <label for="han">翻数 (Han):</label>
+        <select id="han">
+            <option value="1">1翻</option>
+            <option value="2">2翻</option>
+            <option value="3">3翻</option>
+            <option value="4">4翻</option>
+            <option value="5">5翻 (満貫)</option>
+            <option value="6">6翻</option>
+            <option value="7">7翻</option>
+            <option value="8">8翻 (跳満)</option>
+            <option value="9">9翻</option>
+            <option value="10">10翻</option>
+            <option value="11">11翻 (三倍満)</option>
+            <option value="12">12翻</option>
+            <option value="13">13翻 (数え役満)</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="fu">符数 (Fu):</label>
+        <select id="fu">
+            <option value="20">20符 (平和ツモ、七対子など)</option>
+            <option value="25">25符 (平和ロン、七対子以外)</option>
+            <option value="30" selected>30符</option>
+            <option value="40">40符</option>
+            <option value="50">50符</option>
+            <option value="60">60符</option>
+            <option value="70">70符</option>
+            <option value="80">80符</option>
+            <option value="90">90符</option>
+            <option value="100">100符</option>
+            <option value="110">110符</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="agariType">あがり方:</label>
+        <select id="agariType">
+            <option value="ron_ko">子 (ロン)</option>
+            <option value="tsumo_ko">子 (ツモ)</option>
+            <option value="ron_oya">親 (ロン)</option>
+            <option value="tsumo_oya">親 (ツモ)</option>
+        </select>
+    </div>
+
+    <button onclick="calculateScore()">点数計算</button>
+
+    <div id="result">
+        計算結果が表示されます。
+    </div>
+</div>
+
+<script>
+    /**
+     * 点数計算のメインロジック
+     */
+    function calculateScore() {
+        const han = parseInt(document.getElementById('han').value);
+        const fu = parseInt(document.getElementById('fu').value);
+        const agariType = document.getElementById('agariType').value;
+        const resultDiv = document.getElementById('result');
+
+        if (isNaN(han) || isNaN(fu) || han < 1) {
+            resultDiv.innerHTML = '<span class="error">翻数と符数を正しく入力してください。</span>';
+            return;
+        }
+
+        let isDealer = agariType.includes('oya');
+        let isRon = agariType.includes('ron');
+        
+        let basePoint = 0;
+        let totalScore = 0;
+        let resultText = '';
+        
+        // ----------------------------------------------------
+        // 1. 役満・満貫の判定と処理 (日本の一般的なルール)
+        // ----------------------------------------------------
+        if (han >= 13) {
+            // 役満 (13翻以上)
+            basePoint = 8000;
+            totalScore = isDealer ? 48000 : 32000;
+            resultText = `**役満**（${isDealer ? '親' : '子'}）：${totalScore}点`;
+        } else if (han >= 11) {
+            // 三倍満 (11-12翻)
+            basePoint = 6000;
+            totalScore = isDealer ? 36000 : 24000;
+            resultText = `**三倍満**（${isDealer ? '親' : '子'}）：${totalScore}点`;
+        } else if (han >= 8) {
+            // 跳満 (8-10翻)
+            basePoint = 4000;
+            totalScore = isDealer ? 24000 : 16000;
+            resultText = `**跳満**（${isDealer ? '親' : '子'}）：${totalScore}点`;
+        } else if (han >= 6) {
+             // 満貫 (6-7翻) ※切り上げ満貫ルールは適用しない
+             basePoint = 2000;
+             totalScore = isDealer ? 12000 : 8000;
+             resultText = `**満貫**（${isDealer ? '親' : '子'}）：${totalScore}点`;
+        } else if (han === 5) {
+            // 満貫 (5翻)
+            basePoint = 2000;
+            totalScore = isDealer ? 12000 : 8000;
+            resultText = `**満貫**（${isDealer ? '親' : '子'}）：${totalScore}点`;
+        }
+        
+        // ----------------------------------------------------
+        // 2. 満貫未満の計算 (符*2^(2+翻) の計算)
+        // ----------------------------------------------------
+        if (basePoint === 0) {
+            // 基礎点: 符 * 2^(2 + 翻)
+            basePoint = fu * Math.pow(2, 2 + han);
+            
+            // 100点未満切り上げ
+            basePoint = Math.ceil(basePoint / 100) * 100;
+            
+            // 役無しや点数が低すぎる場合のチェック
+            if (basePoint === 0) {
+                resultDiv.innerHTML = '<span class="error">点数が発生しませんでした。翻数と符数を確認してください。</span>';
+                return;
+            }
+
+            // 満貫未満だが、基礎点が2000点を超えた場合、満貫とする (切り上げ満貫ではない)
+            if (basePoint > 2000) {
+                // 通常は5翻以上で満貫になるため、この分岐は原則通りに動作
+            }
+        }
+
+        // ----------------------------------------------------
+        // 3. ロン・ツモ、親・子の点数内訳の計算
+        // ----------------------------------------------------
+        let dealerRonScore = 0; // 親のロン点
+        let childRonScore = 0;  // 子のロン点
+        let dealerTsumoPerChild = 0; // 親のツモ上がり (子一人あたりの支払)
+        let childTsumoFromDealer = 0; // 子のツモ上がり (親からの支払)
+        let childTsumoFromChild = 0; // 子のツモ上がり (子からの支払)
+
+        if (isRon) {
+            // ロン上がりの場合
+            if (isDealer) {
+                dealerRonScore = basePoint * 6;
+                totalScore = dealerRonScore;
+                resultText = `${han}翻 ${fu}符（親ロン）：**${totalScore}点**`;
+            } else {
+                childRonScore = basePoint * 4;
+                totalScore = childRonScore;
+                resultText = `${han}翻 ${fu}符（子ロン）：**${totalScore}点**`;
+            }
+        } else {
+            // ツモ上がりの場合
+            if (isDealer) {
+                // 親のツモ: 子一人あたり基礎点 x 2
+                dealerTsumoPerChild = basePoint * 2;
+                dealerTsumoPerChild = Math.ceil(dealerTsumoPerChild / 100) * 100; // 再度切り上げ
+                totalScore = dealerTsumoPerChild * 3;
+                resultText = `${han}翻 ${fu}符（親ツモ）：**${dealerTsumoPerChild}オール** / 総計${totalScore}点`;
+            } else {
+                // 子のツモ: 親から基礎点 x 2、子から基礎点 x 1
+                childTsumoFromDealer = basePoint * 2;
+                childTsumoFromChild = basePoint * 1;
+
+                // 支払い点数を100点単位に切り上げ
+                childTsumoFromDealer = Math.ceil(childTsumoFromDealer / 100) * 100;
+                childTsumoFromChild = Math.ceil(childTsumoFromChild / 100) * 100;
+                
+                totalScore = childTsumoFromDealer + childTsumoFromChild * 2;
+                resultText = `${han}翻 ${fu}符（子ツモ）：**親${childTsumoFromDealer}・子${childTsumoFromChild}** / 総計${totalScore}点`;
+            }
+        }
+        
+        // ----------------------------------------------------
+        // 4. 結果表示
+        // ----------------------------------------------------
+        let detailHtml = `
+            <p class="score-detail">**計算結果**</p>
+            <p class="score-detail">${resultText}</p>
+        `;
+
+        if (han < 5 && basePoint > 0) {
+            detailHtml += `<p class="score-detail">(基礎点: ${basePoint}点)</p>`;
+        }
+        
+        resultDiv.innerHTML = detailHtml;
+    }
+</script>
+
+</body>
+</html>
