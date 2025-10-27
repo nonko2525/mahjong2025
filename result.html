@@ -3,207 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>麻雀点数計算機 (JavaScript)</title>
+    <title>ConnectCode マッチングプロトタイプ</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        h1 { color: #333; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
-        input[type="number"], select { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; font-size: 16px; width: 100%; }
-        button:hover { background-color: #45a049; }
-        #result { margin-top: 20px; padding: 15px; border: 2px solid #007bff; background-color: #e9f5ff; border-radius: 4px; }
-        .score-detail { margin-top: 10px; }
-        .error { color: red; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f0f2f5; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 700px; margin: auto; }
+        h1 { color: #24292e; border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; margin-bottom: 20px; }
+        h2 { color: #0366d6; margin-top: 25px; }
+        label { display: block; margin-top: 15px; font-weight: 600; color: #586069; }
+        input[type="number"] { width: 80px; padding: 6px; border: 1px solid #d1d5da; border-radius: 6px; text-align: right; margin-left: 10px; }
+        button { background-color: #2ea44f; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; margin-top: 20px; font-size: 16px; width: 100%; transition: background-color 0.2s; }
+        button:hover { background-color: #22863a; }
+        .skill-input-group { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; }
+        #results { margin-top: 30px; padding: 20px; border: 1px solid #d1d5da; border-radius: 6px; background-color: #f6f8fa; }
+        .match-item { border-bottom: 1px solid #e1e4e8; padding: 10px 0; display: flex; justify-content: space-between; }
+        .match-score { font-weight: bold; color: #2ea44f; font-size: 1.1em; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>麻雀点数計算機</h1>
+    <h1>ConnectCode マッチングシミュレーター</h1>
+    <p>あなたのスキルレベル (0〜100) を入力し、仮想プロジェクトとの相性を計算します。</p>
 
-    <div>
-        <label for="han">翻数 (Han):</label>
-        <select id="han">
-            <option value="1">1翻</option>
-            <option value="2">2翻</option>
-            <option value="3">3翻</option>
-            <option value="4">4翻</option>
-            <option value="5">5翻 (満貫)</option>
-            <option value="6">6翻</option>
-            <option value="7">7翻</option>
-            <option value="8">8翻 (跳満)</option>
-            <option value="9">9翻</option>
-            <option value="10">10翻</option>
-            <option value="11">11翻 (三倍満)</option>
-            <option value="12">12翻</option>
-            <option value="13">13翻 (数え役満)</option>
-        </select>
+    <h2>あなたのスキル (0-100)</h2>
+    <div id="skill-inputs">
+        <div class="skill-input-group">
+            <label>JavaScript/TypeScript:</label>
+            <input type="number" id="skill_js" value="80" min="0" max="100">
+        </div>
+        <div class="skill-input-group">
+            <label>Backend (Go/Python):</label>
+            <input type="number" id="skill_backend" value="50" min="0" max="100">
+        </div>
+        <div class="skill-input-group">
+            <label>DevOps (AWS/Docker):</label>
+            <input type="number" id="skill_devops" value="30" min="0" max="100">
+        </div>
+        <div class="skill-input-group">
+            <label>Design/UX:</label>
+            <input type="number" id="skill_design" value="10" min="0" max="100">
+        </div>
+        <div class="skill-input-group">
+            <label>Recent Activity (10-100, コミット頻度):</label>
+            <input type="number" id="activity" value="90" min="10" max="100">
+        </div>
     </div>
 
-    <div>
-        <label for="fu">符数 (Fu):</label>
-        <select id="fu">
-            <option value="20">20符 (平和ツモ、七対子など)</option>
-            <option value="25">25符 (平和ロン、七対子以外)</option>
-            <option value="30" selected>30符</option>
-            <option value="40">40符</option>
-            <option value="50">50符</option>
-            <option value="60">60符</option>
-            <option value="70">70符</option>
-            <option value="80">80符</option>
-            <option value="90">90符</option>
-            <option value="100">100符</option>
-            <option value="110">110符</option>
-        </select>
-    </div>
+    <button onclick="runMatching()">マッチング開始</button>
 
-    <div>
-        <label for="agariType">あがり方:</label>
-        <select id="agariType">
-            <option value="ron_ko">子 (ロン)</option>
-            <option value="tsumo_ko">子 (ツモ)</option>
-            <option value="ron_oya">親 (ロン)</option>
-            <option value="tsumo_oya">親 (ツモ)</option>
-        </select>
-    </div>
-
-    <button onclick="calculateScore()">点数計算</button>
-
-    <div id="result">
-        計算結果が表示されます。
+    <div id="results">
+        マッチング結果がここに表示されます。
     </div>
 </div>
 
 <script>
+    // 仮想のプロジェクトデータ (求めるスキルレベル 0-100)
+    // 実際にはデータベースから取得されます。
+    const VIRTUAL_PROJECTS = [
+        { 
+            id: 1, 
+            name: "次世代Webエディタ開発 (TypeScript強め)", 
+            requiredSkills: { js: 95, backend: 40, devops: 20, design: 70 },
+            activityWeight: 0.8
+        },
+        { 
+            id: 2, 
+            name: "高性能APIサーバー構築 (Go/Rust経験必須)", 
+            requiredSkills: { js: 10, backend: 90, devops: 80, design: 5 },
+            activityWeight: 0.95
+        },
+        { 
+            id: 3, 
+            name: "スタートアップのMVP開発 (フルスタック)", 
+            requiredSkills: { js: 60, backend: 60, devops: 50, design: 40 },
+            activityWeight: 0.7
+        },
+    ];
+
     /**
-     * 点数計算のメインロジック
+     * コサイン類似度を計算する関数 (マッチングのコアロジック)
+     * ベクトルAとベクトルBの類似度を0.0 (無関係) から 1.0 (完全一致) で返します。
+     * @param {Object} vecA - ユーザーのスキルベクトル
+     * @param {Object} vecB - プロジェクトの要求スキルベクトル
+     * @returns {number} コサイン類似度
      */
-    function calculateScore() {
-        const han = parseInt(document.getElementById('han').value);
-        const fu = parseInt(document.getElementById('fu').value);
-        const agariType = document.getElementById('agariType').value;
-        const resultDiv = document.getElementById('result');
+    function calculateCosineSimilarity(vecA, vecB) {
+        const skills = Object.keys(vecA);
+        let dotProduct = 0;
+        let magnitudeA = 0;
+        let magnitudeB = 0;
 
-        if (isNaN(han) || isNaN(fu) || han < 1) {
-            resultDiv.innerHTML = '<span class="error">翻数と符数を正しく入力してください。</span>';
-            return;
+        for (const skill of skills) {
+            dotProduct += vecA[skill] * vecB[skill];
+            magnitudeA += vecA[skill] ** 2;
+            magnitudeB += vecB[skill] ** 2;
         }
 
-        let isDealer = agariType.includes('oya');
-        let isRon = agariType.includes('ron');
-        
-        let basePoint = 0;
-        let totalScore = 0;
-        let resultText = '';
-        
-        // ----------------------------------------------------
-        // 1. 役満・満貫の判定と処理 (日本の一般的なルール)
-        // ----------------------------------------------------
-        if (han >= 13) {
-            // 役満 (13翻以上)
-            basePoint = 8000;
-            totalScore = isDealer ? 48000 : 32000;
-            resultText = `**役満**（${isDealer ? '親' : '子'}）：${totalScore}点`;
-        } else if (han >= 11) {
-            // 三倍満 (11-12翻)
-            basePoint = 6000;
-            totalScore = isDealer ? 36000 : 24000;
-            resultText = `**三倍満**（${isDealer ? '親' : '子'}）：${totalScore}点`;
-        } else if (han >= 8) {
-            // 跳満 (8-10翻)
-            basePoint = 4000;
-            totalScore = isDealer ? 24000 : 16000;
-            resultText = `**跳満**（${isDealer ? '親' : '子'}）：${totalScore}点`;
-        } else if (han >= 6) {
-             // 満貫 (6-7翻) ※切り上げ満貫ルールは適用しない
-             basePoint = 2000;
-             totalScore = isDealer ? 12000 : 8000;
-             resultText = `**満貫**（${isDealer ? '親' : '子'}）：${totalScore}点`;
-        } else if (han === 5) {
-            // 満貫 (5翻)
-            basePoint = 2000;
-            totalScore = isDealer ? 12000 : 8000;
-            resultText = `**満貫**（${isDealer ? '親' : '子'}）：${totalScore}点`;
+        magnitudeA = Math.sqrt(magnitudeA);
+        magnitudeB = Math.sqrt(magnitudeB);
+
+        if (magnitudeA === 0 || magnitudeB === 0) {
+            return 0; // どちらかのベクトルがゼロの場合は類似度ゼロ
         }
+
+        // コサイン類似度の計算: (A・B) / (|A| * |B|)
+        return dotProduct / (magnitudeA * magnitudeB);
+    }
+
+    /**
+     * メインのマッチング処理を実行する関数
+     */
+    function runMatching() {
+        // ユーザー入力の取得
+        const userSkills = {
+            js: parseInt(document.getElementById('skill_js').value) || 0,
+            backend: parseInt(document.getElementById('skill_backend').value) || 0,
+            devops: parseInt(document.getElementById('skill_devops').value) || 0,
+            design: parseInt(document.getElementById('skill_design').value) || 0,
+        };
+        const userActivity = parseInt(document.getElementById('activity').value) || 0;
         
-        // ----------------------------------------------------
-        // 2. 満貫未満の計算 (符*2^(2+翻) の計算)
-        // ----------------------------------------------------
-        if (basePoint === 0) {
-            // 基礎点: 符 * 2^(2 + 翻)
-            basePoint = fu * Math.pow(2, 2 + han);
+        const resultsDiv = document.getElementById('results');
+        let resultsHTML = '<h2>マッチング結果</h2>';
+
+        // 各プロジェクトとのマッチングスコアを計算
+        const matches = VIRTUAL_PROJECTS.map(project => {
+            // 1. コサイン類似度によるスキル相性の計算
+            const similarity = calculateCosineSimilarity(userSkills, project.requiredSkills);
             
-            // 100点未満切り上げ
-            basePoint = Math.ceil(basePoint / 100) * 100;
+            // 2. アクティビティによる補正（w2 * log(Recent Commits) の簡易版）
+            // ユーザーのアクティビティとプロジェクトの要求する活動重みを考慮
+            // 0.2は重み付けの係数として使用
+            const activityBonus = 0.2 * (userActivity / 100) * project.activityWeight; 
             
-            // 役無しや点数が低すぎる場合のチェック
-            if (basePoint === 0) {
-                resultDiv.innerHTML = '<span class="error">点数が発生しませんでした。翻数と符数を確認してください。</span>';
-                return;
-            }
+            // 3. 最終マッチスコアの計算 (0-100点に換算)
+            // Score = (Similarity * 0.8 + ActivityBonus * 0.2) * 100
+            let matchScore = (similarity * 0.8 + activityBonus * 0.2) * 100;
+            
+            // スコアを小数点以下を四捨五入して整数にする
+            matchScore = Math.round(matchScore);
 
-            // 満貫未満だが、基礎点が2000点を超えた場合、満貫とする (切り上げ満貫ではない)
-            if (basePoint > 2000) {
-                // 通常は5翻以上で満貫になるため、この分岐は原則通りに動作
-            }
-        }
+            return {
+                name: project.name,
+                score: matchScore
+            };
+        }).sort((a, b) => b.score - a.score); // スコアの高い順にソート
 
-        // ----------------------------------------------------
-        // 3. ロン・ツモ、親・子の点数内訳の計算
-        // ----------------------------------------------------
-        let dealerRonScore = 0; // 親のロン点
-        let childRonScore = 0;  // 子のロン点
-        let dealerTsumoPerChild = 0; // 親のツモ上がり (子一人あたりの支払)
-        let childTsumoFromDealer = 0; // 子のツモ上がり (親からの支払)
-        let childTsumoFromChild = 0; // 子のツモ上がり (子からの支払)
-
-        if (isRon) {
-            // ロン上がりの場合
-            if (isDealer) {
-                dealerRonScore = basePoint * 6;
-                totalScore = dealerRonScore;
-                resultText = `${han}翻 ${fu}符（親ロン）：**${totalScore}点**`;
-            } else {
-                childRonScore = basePoint * 4;
-                totalScore = childRonScore;
-                resultText = `${han}翻 ${fu}符（子ロン）：**${totalScore}点**`;
-            }
+        // 結果のHTML生成
+        if (matches.length === 0) {
+            resultsHTML += '<p>マッチングするプロジェクトが見つかりませんでした。</p>';
         } else {
-            // ツモ上がりの場合
-            if (isDealer) {
-                // 親のツモ: 子一人あたり基礎点 x 2
-                dealerTsumoPerChild = basePoint * 2;
-                dealerTsumoPerChild = Math.ceil(dealerTsumoPerChild / 100) * 100; // 再度切り上げ
-                totalScore = dealerTsumoPerChild * 3;
-                resultText = `${han}翻 ${fu}符（親ツモ）：**${dealerTsumoPerChild}オール** / 総計${totalScore}点`;
-            } else {
-                // 子のツモ: 親から基礎点 x 2、子から基礎点 x 1
-                childTsumoFromDealer = basePoint * 2;
-                childTsumoFromChild = basePoint * 1;
-
-                // 支払い点数を100点単位に切り上げ
-                childTsumoFromDealer = Math.ceil(childTsumoFromDealer / 100) * 100;
-                childTsumoFromChild = Math.ceil(childTsumoFromChild / 100) * 100;
-                
-                totalScore = childTsumoFromDealer + childTsumoFromChild * 2;
-                resultText = `${han}翻 ${fu}符（子ツモ）：**親${childTsumoFromDealer}・子${childTsumoFromChild}** / 総計${totalScore}点`;
-            }
+            matches.forEach(match => {
+                resultsHTML += `
+                    <div class="match-item">
+                        <span>${match.name}</span>
+                        <span class="match-score">${match.score} 点</span>
+                    </div>
+                `;
+            });
         }
         
-        // ----------------------------------------------------
-        // 4. 結果表示
-        // ----------------------------------------------------
-        let detailHtml = `
-            <p class="score-detail">**計算結果**</p>
-            <p class="score-detail">${resultText}</p>
-        `;
-
-        if (han < 5 && basePoint > 0) {
-            detailHtml += `<p class="score-detail">(基礎点: ${basePoint}点)</p>`;
-        }
-        
-        resultDiv.innerHTML = detailHtml;
+        resultsDiv.innerHTML = resultsHTML;
     }
 </script>
 
